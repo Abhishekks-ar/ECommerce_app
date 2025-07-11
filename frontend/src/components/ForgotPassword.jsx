@@ -1,17 +1,39 @@
 import React, { useState } from "react";
+import {
+  Box,
+  Button,
+  Paper,
+  TextField,
+  Typography,
+  CircularProgress,
+  Divider,
+} from "@mui/material";
 import axios from "axios";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setEmailError(!emailRegex.test(value));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (emailError || !email) return;
+
     setLoading(true);
     setMessage("");
+
     try {
-      const res = await axios.post("http://localhost:3000/auth/forgot-password", { email });
+      const res = await axios.post("http://localhost:3000/auth/forgot-password", {
+        email,
+      });
       setMessage(res.data.message);
     } catch (err) {
       setMessage(err.response?.data?.message || "Something went wrong");
@@ -21,74 +43,68 @@ function ForgotPassword() {
   };
 
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#f4f4f4",
+        p: 2,
       }}
     >
-      <div
-        style={{
-          background: "#fff",
-          padding: "30px",
-          borderRadius: "10px",
-          boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+      <Paper
+        elevation={4}
+        sx={{
           width: "100%",
-          maxWidth: "400px",
+          maxWidth: 400,
+          p: 4,
+          borderRadius: 3,
         }}
       >
-        <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+        <Typography variant="h5" sx={{ mb: 1, textAlign: "center", fontWeight: 600 }}>
           Forgot Password
-        </h2>
+        </Typography>
+
+        <Divider sx={{ mb: 3 }} />
+
         <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            placeholder="Enter your registered email"
+          <TextField
+            fullWidth
+            label="Registered Email"
+            variant="outlined"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{
-              width: "100%",
-              padding: "10px",
-              marginBottom: "15px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-              fontSize: "16px",
-            }}
+            onChange={handleEmailChange}
+            error={emailError}
+            helperText={emailError ? "Enter a valid email address" : " "}
+            sx={{ mb: 2 }}
           />
-          <button
+
+          <Button
             type="submit"
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "10px",
-              backgroundColor: "#007bff",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              fontSize: "16px",
-              cursor: "pointer",
-            }}
+            fullWidth
+            variant="contained"
+            color="primary"
+            disabled={!email || emailError || loading}
           >
-            {loading ? "Sending..." : "Send Reset Link"}
-          </button>
+            {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Send Reset Link"}
+          </Button>
         </form>
+
         {message && (
-          <p
-            style={{
-              marginTop: "15px",
-              color: message.includes("sent") ? "green" : "red",
-              textAlign: "center",
+          <Typography
+            variant="body2"
+            align="center"
+            sx={{
+              mt: 2,
+              color: message.toLowerCase().includes("sent") ? "green" : "red",
             }}
           >
             {message}
-          </p>
+          </Typography>
         )}
-      </div>
-    </div>
+      </Paper>
+    </Box>
   );
 }
 

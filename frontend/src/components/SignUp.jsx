@@ -21,6 +21,8 @@ const SignUp = () => {
   const [emailError, setEmailError] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState(false);
+  const [role, setRole] = useState("user");
+  const [businessName, setBusinessName] = useState("");
 
   const navigate = useNavigate();
 
@@ -40,7 +42,13 @@ const SignUp = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const signupData = { name, email, password, role: "user", };
+    const signupData = {
+      name,
+      email,
+      password,
+      role,
+      ...(role === "seller" && { businessName }),
+    };
 
     axios
       .post("http://localhost:3000/auth/signup", signupData)
@@ -54,18 +62,21 @@ const SignUp = () => {
   };
 
   const handleVerifyOtp = () => {
-    axios
-      .post("http://localhost:3000/auth/verify-otp", { email, otp })
-      .then((res) => {
-        // alert("OTP verified successfully");
-        sessionStorage.setItem("token", res.data.token);
-        sessionStorage.setItem("user", JSON.stringify(res.data.user));
-        navigate("/");
-      })
-      .catch((err) => {
-        alert(err.response?.data?.message || "OTP verification failed");
-      });
-  };
+  axios
+    .post("http://localhost:3000/auth/verify-otp", { email, otp })
+    .then((res) => {
+      console.log("VERIFY OTP RESPONSE:", res.data); // ✅ Debug log
+      sessionStorage.setItem("token", res.data.token);
+      sessionStorage.setItem("user", JSON.stringify(res.data.user));
+      sessionStorage.setItem("sellerId", res.data.user.id); // ✅ Use sessionStorage consistently
+
+      navigate("/seller/dashboard/");
+    })
+    .catch((err) => {
+      alert(err.response?.data?.message || "OTP verification failed");
+    });
+};
+
 
   const handleResendOtp = () => {
     axios
@@ -109,10 +120,25 @@ const SignUp = () => {
 
             <Divider sx={{ mb: 3 }} />
 
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+              <Button
+                variant={role === "user" ? "contained" : "outlined"}
+                onClick={() => setRole("user")}
+                sx={{ mr: 1 }}
+              >
+                User
+              </Button>
+              <Button
+                variant={role === "seller" ? "contained" : "outlined"}
+                onClick={() => setRole("seller")}
+              >
+                Seller
+              </Button>
+            </Box>
+
             <form onSubmit={handleSubmit}>
               <TextField
                 fullWidth
-                // required
                 label={
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     Name <BadgeIcon fontSize="small" />
@@ -124,9 +150,19 @@ const SignUp = () => {
                 onChange={(e) => setName(e.target.value)}
               />
 
+              {role === "seller" && (
+                <TextField
+                  fullWidth
+                  label="Business Name (Company/Store Name)"
+                  variant="outlined"
+                  sx={{ mb: 2 }}
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                />
+              )}
+
               <TextField
                 fullWidth
-                // required
                 label={
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     Email <MailOutlineIcon fontSize="small" />
@@ -142,7 +178,6 @@ const SignUp = () => {
 
               <TextField
                 fullWidth
-                // required
                 type="password"
                 label={
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -154,7 +189,6 @@ const SignUp = () => {
                 onChange={handlePassword}
                 error={passwordError}
                 helperText={passwordError ? "Min 6 chars, 1 uppercase" : " "}
-                // sx={{ mb: 3 }}
               />
 
               <Button
@@ -163,7 +197,12 @@ const SignUp = () => {
                 color="primary"
                 fullWidth
                 disabled={
-                  !name || !email || !password || emailError || passwordError
+                  !name ||
+                  !email ||
+                  !password ||
+                  emailError ||
+                  passwordError ||
+                  (role === "seller" && !businessName)
                 }
               >
                 Sign Up
@@ -175,7 +214,7 @@ const SignUp = () => {
               <Button
                 variant="text"
                 size="small"
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/")}
               >
                 Log In
               </Button>

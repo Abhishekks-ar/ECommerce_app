@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react'
 import {
   AppBar,
   Toolbar,
@@ -19,7 +19,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import LogoutIcon from '@mui/icons-material/Logout';
 
-const Navbar = () => {
+const SellerDashboard = () => {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -37,13 +37,13 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { label: "Home", path: "/customer/dashboard" },
-    { label: "Products", path: "/customer/products" },
-    { label: "Cart", path: "/customer/cart" },
+    { label: "My Products", path: "/seller/dashboard" },
+    { label: "Add Products", path: "/seller/add-products" },
+    // { label: "Cart", path: "/cart" },
   ];
 
   return (
-    <>
+    <div>
       <AppBar  sx={{ background: "#1976d2" }}>
         <Toolbar>
           <Typography variant="h6" sx={{display:"flex",justifyContent:"start", flexGrow: 1, fontWeight: "bold", cursor: "pointer" }} onClick={() => navigate("/home")}>
@@ -82,9 +82,8 @@ const Navbar = () => {
           )}
         </Toolbar>
       </AppBar>
-    </>
-  );
-};
+    </div>
+  )
+}
 
-export default Navbar;
-
+export default SellerDashboard

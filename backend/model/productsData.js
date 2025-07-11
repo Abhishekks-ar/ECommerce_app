@@ -5,13 +5,45 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  description: String,
+
+  description: {
+    type: String,
+    required: true,
+  },
+
   price: {
     type: Number,
     required: true,
+    min: 0,
   },
-  images: [String],
-  category: String,
+
+  discount: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100,
+  },
+
+  stock: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+
+  images: {
+    type: [String],
+    validate: {
+      validator: function (arr) {
+        return arr.length >= 1; // At least one image required
+      },
+      message: "At least one image URL is required.",
+    },
+  },
+
+  category: {
+    type: String,
+    required: true,
+  },
 
   seller: {
     type: mongoose.Schema.Types.ObjectId,
@@ -25,13 +57,11 @@ const productSchema = new mongoose.Schema({
     default: "pending",
   },
 
-  // Total units sold
   totalSold: {
     type: Number,
     default: 0,
   },
 
-  // Ratings array (user reviews)
   ratings: [
     {
       user: {

@@ -18,6 +18,15 @@ require("./db/connection");
 const authRoute = require("./routes/authRoutes");
 app.use("/auth", authRoute);
 
+const adminRoutes = require("./routes/adminRoutes");
+app.use("/admin", adminRoutes);
+
+const sellerRoute = require("./routes/sellerRoutes");
+app.use("/seller", sellerRoute);
+
+const productRoutes = require("./routes/productRoutes");
+app.use("/products", productRoutes);
+
 app.listen(process.env.PORT, () => {
   console.log(`server is listening in port ${process.env.PORT}`);
 });

@@ -5,6 +5,8 @@ import {
   TextField,
   Typography,
   Divider,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import axios from "axios";
 import React, { useState } from "react";
@@ -16,6 +18,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState(false);
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("user");
 
   const navigate = useNavigate();
 
@@ -30,24 +33,32 @@ const Login = () => {
     setPassword(e.target.value);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const loginData = { email, password , role:"user"};
+const handleSubmit = (e) => {
+  e.preventDefault();
+  const loginData = { email, password, role };
 
-    axios
-      .post("http://localhost:3000/auth/login", loginData)
-      .then((res) => {
-        // alert(res.data.message);
-        sessionStorage.setItem("token", res.data.token);
-        sessionStorage.setItem("user", JSON.stringify(res.data.user));
-        navigate("/");
-      })
-      .catch((err) => {
-        const errorMsg =
-          err.response?.data?.message || "Login failed. Try again.";
-        alert(errorMsg);
-      });
-  };
+  axios
+    .post("http://localhost:3000/auth/login", loginData)
+    .then((res) => {
+      const { token, user } = res.data;
+
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("sellerId", user.id); // ✅ Consistent with OTP verify
+
+      // Role-based redirection
+      if (role === "seller") {
+        navigate("/seller/dashboard");
+      } else {
+        navigate("/customer/dashboard");
+      }
+    })
+    .catch((err) => {
+      const errorMsg = err.response?.data?.message || "Login failed. Try again.";
+      alert(errorMsg);
+    });
+};
+
 
   return (
     <Box
@@ -66,7 +77,6 @@ const Login = () => {
           width: "100%",
           p: 4,
           borderRadius: 3,
-          // backgroundColor: "white",
         }}
       >
         <Typography
@@ -79,8 +89,20 @@ const Login = () => {
         <Divider sx={{ mb: 3 }} />
 
         <form onSubmit={handleSubmit}>
+          <ToggleButtonGroup
+            value={role}
+            exclusive
+            onChange={(e, newRole) => {
+              if (newRole !== null) setRole(newRole);
+            }}
+            fullWidth
+            sx={{ mb: 3 }}
+          >
+            <ToggleButton value="user">Customer</ToggleButton>
+            <ToggleButton value="seller">Seller</ToggleButton>
+          </ToggleButtonGroup>
+
           <TextField
-            // required
             fullWidth
             label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -96,7 +118,6 @@ const Login = () => {
           />
 
           <TextField
-            // required
             fullWidth
             type="password"
             label={

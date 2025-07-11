@@ -10,10 +10,10 @@ const Admin = require("../model/adminData");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// ====== In-Memory OTP Store ======
+// In-Memory OTP Store 
 const otpStore = {};
 
-// ====== Utility Functions ======
+//  Utility Functions 
 const generateToken = (user) => {
   return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
     expiresIn: "1h",
@@ -41,12 +41,41 @@ const sendOTPEmail = async (name, email, otp) => {
     to: email,
     from: "ksabhishek37@gmail.com",
     subject: "NextCart - Verify Your Email",
-    html: `<p>Hello <strong>${name}</strong>,</p><p>Your OTP is: <strong>${otp}</strong></p><p>This OTP will expire in 5 minutes.</p>`,
+    html: `
+  <div style="background-color: #f4f4f4; padding: 30px; font-family: Arial, sans-serif;">
+    <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      
+      <div style="text-align: center;">
+        <img src="https://i.imgur.com/8Km9tLL.png" alt="NextCart Logo" style="max-width: 120px; margin-bottom: 20px;" />
+        <h2 style="color: #333333;">Welcome to <span style="color: #007bff;">NextCart</span>!</h2>
+      </div>
+
+      <p style="font-size: 16px; color: #333333;">Hello <strong>${name}</strong>,</p>
+      
+      <p style="font-size: 16px; color: #333333;">Thank you for registering with <strong>NextCart</strong>. To complete your signup, please use the following One-Time Password (OTP):</p>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <span style="font-size: 28px; font-weight: bold; color: #ffffff; background: #007bff; padding: 15px 30px; border-radius: 8px; display: inline-block;">
+          ${otp}
+        </span>
+      </div>
+
+      <p style="font-size: 14px; color: #555;">This OTP is valid for <strong>5 minutes</strong>. For your security, do not share this code with anyone.</p>
+
+      <p style="font-size: 14px; color: #555;">If you did not initiate this request, you can safely ignore this email.</p>
+
+      <hr style="margin: 30px 0;" />
+
+      <p style="font-size: 14px; color: #888;">Best regards,<br/>The <strong>NextCart</strong> Team</p>
+    </div>
+  </div>
+`,
+
   };
   await sgMail.send(msg);
 };
 
-// ====== Signup ======
+// Signup 
 exports.signup = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -58,10 +87,10 @@ exports.signup = async (req, res) => {
     if (existing)
       return res.status(409).json({ message: "Email already registered" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);5
     const otp = generateOTP();
     // const expiresAt = Date.now() + 5 * 60 * 1000;
-    console.log(otp);
+    // console.log(otp);
 
     otpStore[email] = {
       otp,
@@ -153,6 +182,30 @@ exports.resendOTP = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password, role } = req.body;
+
+    // Temporary admin login shortcut
+    if (
+      email === "admin@example.com" &&
+      password === "Admin123" &&
+      role === "admin"
+    ) {
+      const token = jwt.sign({ id: "admin-id", role: "admin" }, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
+
+      return res.status(200).json({
+        message: "Admin login successful (hardcoded)",
+        token,
+        user: {
+          id: "admin-id",
+          name: "Super Admin",
+          email,
+          role,
+        },
+      });
+    }
+
+    // Proceed with normal logic for others
     const model = getModelByRole(role);
     if (!model) return res.status(400).json({ message: "Invalid role" });
 
@@ -178,6 +231,8 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Login failed" });
   }
 };
+
+
 
 // ====== Forgot Password ======
 exports.forgotPassword = async (req, res) => {
@@ -255,3 +310,24 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: "Password reset failed" });
   }
 };
+
+// ====== Authentication Middleware ======
+exports.authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // attaches { id, role } to req.user
+    next();
+  } catch (err) {
+    console.error("Authentication error:", err);
+    return res.status(403).json({ message: "Invalid or expired token" });
+  }
+};
+

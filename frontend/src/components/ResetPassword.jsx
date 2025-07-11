@@ -9,7 +9,7 @@ import {
   TextField,
   Button,
   Alert,
-  Paper
+  Paper,
 } from "@mui/material";
 
 function ResetPassword() {
@@ -20,6 +20,7 @@ function ResetPassword() {
   const role = searchParams.get("role");
 
   const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
   const [confirm, setConfirm] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -30,6 +31,13 @@ function ResetPassword() {
     }
   }, [token, role]);
 
+  const handlePassword = (e) => {
+    const value = e.target.value;
+    setPassword(value);
+    const passwordRegex = /^(?=.*[A-Z]).{6,}$/;
+    setPasswordError(!passwordRegex.test(value));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -39,11 +47,14 @@ function ResetPassword() {
     }
 
     try {
-      const res = await axios.post("http://localhost:3000/auth/reset-password", {
-        token,
-        role,
-        newPassword: password,
-      });
+      const res = await axios.post(
+        "http://localhost:3000/auth/reset-password",
+        {
+          token,
+          role,
+          newPassword: password,
+        }
+      );
 
       setMessage(res.data.message);
       setError("");
@@ -61,7 +72,11 @@ function ResetPassword() {
         </Typography>
 
         {message && <Alert severity="success">{message}</Alert>}
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
           <TextField
@@ -70,7 +85,9 @@ function ResetPassword() {
             fullWidth
             margin="normal"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={handlePassword}
+            error={passwordError}
+            helperText={passwordError ? "Min 6 chars, 1 uppercase" : " "}
             required
           />
 
@@ -84,7 +101,13 @@ function ResetPassword() {
             required
           />
 
-          <Button type="submit" fullWidth variant="contained" color="primary" sx={{ mt: 2 }}>
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="primary"
+            sx={{ mt: 2 }}
+          >
             Reset Password
           </Button>
         </Box>
